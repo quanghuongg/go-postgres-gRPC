@@ -19,26 +19,37 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
+func initialMigration() *gorm.DB {
+	db, err :=  gorm.Open( "postgres", "host=localhost port=5432 user=postgres dbname=postgres sslmode=disable password=huongnq")
+	if err != nil {
+		fmt.Println(err.Error())
+		panic("failed to connect database")
+	}
+	db.LogMode(true)
+
+	// Migrate the schema
+	db.AutoMigrate(&models.User{})
+	return db
+}
+
+
 func LoginUser(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	} else {
-		db, err := gorm.Open("postgres", "host=localhost port=5432 user=postgres dbname=postgres sslmode=disable password=huongnq")
-		if err != nil {
-			panic("failed to connect database")
-		}
-		defer db.Close()
+		db := initialMigration()
 		var users []models.User
-
 		db.Where("Name = ? AND ID = ?", user.Name, user.Id).Find(&users)
+		defer db.Close()
 		if len(users) > 0 {
 			token, _ := GenToken(users[0])
 			c.JSON(http.StatusOK, gin.H{"message": token})
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
 		}
+
 	}
 }
 
@@ -49,17 +60,12 @@ func RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	} else {
-		db, err := gorm.Open("postgres", "host=localhost port=5432 user=postgres dbname=postgres sslmode=disable password=huongnq")
-		if err != nil {
-			panic("failed to connect database")
-		}
-		defer db.Close()
-
+		db := initialMigration()
 		person := models.User{
 			Name: register.Name,
 		}
 		db.Create(&person)
-
+		defer db.Close()
 		msg := fmt.Sprintf("Register User %s success", register.Name)
 		c.JSON(http.StatusOK, gin.H{"message": msg})
 	}
