@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "/bidaspin";
+
+// The greeting service definition.
+service BidaSpin {
+  rpc  UpdateTotalSpin(SpinRequest) returns (SpinResponse) {}
+
+  rpc  GetTotalSpin(SpinRequest) returns (SpinResponse) {}
+
+  rpc  DoSpin(SpinRequest) returns (SpinResponse) {}
+}
+
+message SpinRequest {
+  int32 userId = 1;
+  int32 count = 2;
+  string type= 3;
+}
+
+
+// The response message containing the greetings
+message SpinResponse {
+  string message = 1;
+  string data = 2;
+
+}
